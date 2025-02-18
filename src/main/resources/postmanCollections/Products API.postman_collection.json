@@ -1,0 +1,1535 @@
+{
+	"info": {
+		"_postman_id": "a6f79b0d-d6a6-45fd-b149-a6070b4cb0ea",
+		"name": "001 - Purchase Request - Create CAPEX_INSTR",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39536356"
+	},
+	"item": [
+		{
+			"name": "JWT preparation",
+			"item": [
+				{
+					"name": "JWT preparation",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// import the jsrsasign library\r",
+									"var navigator = {}; //fake a navigator object for the lib\r",
+									"var window = {}; //fake a window object for the lib\r",
+									"pm.collectionVariables.set('jsrsasignLibrary', responseBody);\r",
+									"eval(responseBody)\r",
+									"\r",
+									"// define our jwt header & claims\r",
+									"let header = {\r",
+									"  \"typ\": \"JWT\",\r",
+									"  \"alg\": \"HS384\"\r",
+									"}\r",
+									"let payload = {\r",
+									"  \"iat\": 1666283947,\r",
+									"  \"sub\": \"jwt token\",\r",
+									"  \"iss\": \"trescal\",\r",
+									"  \"exp\": 1766370347,\r",
+									"  \"userId\": 38526,\r",
+									"  \"userName\": \"ayboutahar\",\r",
+									"  \"firstName\": \"Ahmed Yassine\",\r",
+									"  \"lastName\": \"Boutahar\",\r",
+									"  \"subdivisionId\": 6951,\r",
+									"  \"cid\": 6685,\r",
+									"  \"subdivisionName\": \"Casablanca\",\r",
+									"  \"locale\": \"en_US\",\r",
+									"  \"tz\": \"UTC\"\r",
+									"}\r",
+									"\r",
+									"// sign and create JWT\r",
+									"let secret = pm.environment.get('jwtSecret');\r",
+									"let sJWT = KJUR.jws.JWS.sign(\"HS384\", header, payload, {\"b64u\": secret});\r",
+									"\r",
+									"// store the \r",
+									"pm.collectionVariables.set('jwtToken',sJWT)\r",
+									"console.log(sJWT)\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/8.0.20/jsrsasign-all-min.js",
+							"protocol": "https",
+							"host": [
+								"cdnjs",
+								"cloudflare",
+								"com"
+							],
+							"path": [
+								"ajax",
+								"libs",
+								"jsrsasign",
+								"8.0.20",
+								"jsrsasign-all-min.js"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create",
+			"item": [
+				{
+					"name": "Supplier Step",
+					"item": [
+						{
+							"name": "Select supplier company",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Select supplier company - Status code is 200\", pm.response.to.have.status(200));\r",
+											"\r",
+											"pm.test(\"Select supplier company - Reponse has the company 'FLUKE FRANCE'\", function () {\r",
+											"    // check if the return list has the company name\r",
+											"    var jsonData = pm.response.json().find(t => t.name == 'FLUKE FRANCE');\r",
+											"    pm.expect(jsonData).not.eql(null);\r",
+											"    pm.expect(jsonData.id).not.eql(null);\r",
+											"    // store id for next request\r",
+											"    pm.collectionVariables.set(\"supplierCompanyId\", jsonData.id);\r",
+											"    pm.collectionVariables.set(\"supplierCompany\", jsonData);\r",
+											"    console.log('supplierCompany ', pm.collectionVariables.get('supplierCompany'));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/companies?name=FLUKE&roles=BUSINESS&roles=SUPPLIER&business-subdivision-id={{current-subdivision-id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "FLUKE"
+										},
+										{
+											"key": "roles",
+											"value": "BUSINESS"
+										},
+										{
+											"key": "roles",
+											"value": "SUPPLIER"
+										},
+										{
+											"key": "business-subdivision-id",
+											"value": "{{current-subdivision-id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Select supplier subdivision",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Select supplier subdivision - Status code is 200\", pm.response.to.have.status(200));\r",
+											"\r",
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Select supplier subdivision - Reponse has 3 subivisions\", function () {\r",
+											"    pm.expect(jsonData.length).to.equal(3);\r",
+											"    // store subdivision for next request\r",
+											"    let subdivision = jsonData[0];\r",
+											"    subdivision.company = pm.collectionVariables.get('supplierCompany');\r",
+											"    pm.collectionVariables.set(\"supplierSubdivisionId\", subdivision.id);\r",
+											"    pm.collectionVariables.set(\"supplierSubdivision\", subdivision);\r",
+											"    console.log('supplierSubdivision ',pm.collectionVariables.get('supplierSubdivision'));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/:companyid/subdivisions",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										":companyid",
+										"subdivisions"
+									],
+									"variable": [
+										{
+											"key": "companyid",
+											"value": "{{supplierCompanyId}}",
+											"description": "(Required) company id"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Select supplier contact",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Select supplier contact - Status code is 200\", pm.response.to.have.status(200));\r",
+											"\r",
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Select supplier contact - Reponse has 2 contacts\", function () {\r",
+											"    pm.expect(jsonData.length).to.equal(2);\r",
+											"    // store supplier contact\r",
+											"    let contact = jsonData[1];\r",
+											"    contact.subdivision = pm.collectionVariables.get('supplierSubdivision');\r",
+											"    pm.collectionVariables.set(\"supplierContactSerialized\", JSON.stringify(contact));\r",
+											"    console.log('supplierContactSerialized ',pm.collectionVariables.get('supplierContactSerialized'));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/subdivisions/:subdivid/contacts",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"subdivisions",
+										":subdivid",
+										"contacts"
+									],
+									"variable": [
+										{
+											"key": "subdivid",
+											"value": "{{supplierSubdivisionId}}",
+											"description": "(Required) subdivision id"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Channel Step (Static code, no api call)",
+					"item": []
+				},
+				{
+					"name": "Domain Step",
+					"item": [
+						{
+							"name": "Select domain",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Select domain - Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Select domain - Reponse list is not empty\", function () {\r",
+											"    pm.expect(jsonData.length).to.not.equal(0);\r",
+											"     // select 1st domain and store the id\r",
+											"    pm.collectionVariables.set(\"domainSerialized\", JSON.stringify(jsonData[0]));\r",
+											"    console.log('domainSerialized ',pm.collectionVariables.get('domainSerialized'));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/domains/:locale",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"domains",
+										":locale"
+									],
+									"variable": [
+										{
+											"key": "locale",
+											"value": "{{locale}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Client Step",
+					"item": [
+						{
+							"name": "Select client company",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Select client company - Status code is 200\", pm.response.to.have.status(200));\r",
+											"\r",
+											"pm.test(\"Select client company - Reponse has the company 'TRESCAL SAS'\", function () {\r",
+											"    // check if the return list has the company name\r",
+											"    var jsonData = pm.response.json().find(t => t.name == 'TRESCAL SAS');\r",
+											"    pm.expect(jsonData).not.eql(null);\r",
+											"    pm.expect(jsonData.id).not.eql(null);\r",
+											"    // store id for next request\r",
+											"    pm.collectionVariables.set(\"clientCompanyId\", jsonData.id);\r",
+											"    pm.collectionVariables.set(\"clientCompany\", jsonData);\r",
+											"    console.log('clientCompany ',pm.collectionVariables.get('clientCompany'));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/companies?name=TRESCAL&roles=BUSINESS&roles=CLIENT&business-subdivision-id={{current-subdivision-id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "TRESCAL"
+										},
+										{
+											"key": "roles",
+											"value": "BUSINESS"
+										},
+										{
+											"key": "roles",
+											"value": "CLIENT"
+										},
+										{
+											"key": "business-subdivision-id",
+											"value": "{{current-subdivision-id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Select client subdivision",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Select client subdivision - Status code is 200\", pm.response.to.have.status(200));\r",
+											"\r",
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Select client subdivision - Reponse has 111 subivisions and has the subdivision Rungis\", function () {\r",
+											"    pm.expect(jsonData.length).to.not.equal(0);\r",
+											"    let rungisSubdiv = jsonData.find(s => s.id === 6969);\r",
+											"    pm.expect(rungisSubdiv.name).to.equal(\"Rungis\");\r",
+											"    // store subdivision for next request\r",
+											"    rungisSubdiv.company = pm.collectionVariables.get('clientCompany');\r",
+											"    pm.collectionVariables.set(\"clientSubdivisionId\", rungisSubdiv.id);\r",
+											"    pm.collectionVariables.set(\"clientSubdivision\", rungisSubdiv);\r",
+											"    console.log('clientSubdivision ',pm.collectionVariables.get('clientSubdivision'));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/:companyid/subdivisions",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										":companyid",
+										"subdivisions"
+									],
+									"variable": [
+										{
+											"key": "companyid",
+											"value": "{{clientCompanyId}}",
+											"description": "(Required) company id"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Select client contact",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Select client contact - Status code is 200\", pm.response.to.have.status(200));\r",
+											"\r",
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Select client contact - Reponse has 112 subivisions\", function () {\r",
+											"    pm.expect(jsonData.length).to.not.equal(0);\r",
+											"    // store client contact\r",
+											"    let contact = jsonData[2];\r",
+											"    contact.subdivision = pm.collectionVariables.get('clientSubdivision');\r",
+											"    pm.collectionVariables.set(\"clientContactSerialized\", JSON.stringify(contact));\r",
+											"    console.log('clientContactSerialized ',pm.collectionVariables.get('clientContactSerialized'));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/subdivisions/:subdivid/contacts",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"subdivisions",
+										":subdivid",
+										"contacts"
+									],
+									"variable": [
+										{
+											"key": "subdivid",
+											"value": "{{clientSubdivisionId}}",
+											"description": "(Required) subdivision id"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Details Step",
+					"item": [
+						{
+							"name": "Select delivery address",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Select delivery address - Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"var jsonData = pm.response.json();\r",
+											"\r",
+											"pm.test(\"Select delivery address - Reponse has 271 subivisions and has Rungis subdivision\", function () {\r",
+											"    pm.expect(jsonData.length).to.not.equal(0);\r",
+											"    // find Rungis subdiv\r",
+											"    let rungis = jsonData.find(s => s.name == 'Rungis');\r",
+											"    pm.collectionVariables.set(\"deliveryAddressSerialized\", JSON.stringify(rungis.address[0]));\r",
+											"    console.log('deliveryAddressSerialized ',pm.collectionVariables.get('deliveryAddressSerialized'));\r",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/subdivisions/business-subdivisions",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"subdivisions",
+										"business-subdivisions"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Create Purchase Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Create Purchase Request - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"let jsonData = pm.response.json();\r",
+									"pm.collectionVariables.set('purchaseRequestNumber', jsonData.requestNumber);\r",
+									"\r",
+									"\r",
+									"pm.test(\"Create Purchase Request - returned id\", function () {\r",
+									"    pm.expect(jsonData.id).to.not.eql(null);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Create Purchase Request - returned request number\", function () {\r",
+									"    pm.expect(jsonData.requestNumber).to.not.eql(null);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Create Purchase Request - returned status is at 'DRAFT'\", function () {\r",
+									"    pm.expect(jsonData.purchaseRequestStatus).to.eql('DRAFT');\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Create Purchase Request - returned channel ok\", function () {\r",
+									"    pm.expect(jsonData.channel).to.eql('CAPEX_INSTR');\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Create Purchase Request - returned highPriority ok\", function () {\r",
+									"    pm.expect(jsonData.highPriority).to.eql(true);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Create Purchase Request - returned supplierReference ok\", function () {\r",
+									"    pm.expect(jsonData.supplierReference).to.eql('supplier ref');\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Create Purchase Request - returned comment ok\", function () {\r",
+									"    pm.expect(jsonData.comment).to.eql('comment');\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Create Purchase Request - returned domain ok\", function () {\r",
+									"    pm.expect(jsonData.domain).to.eql(JSON.parse(pm.collectionVariables.get('domainSerialized')));\r",
+									"});\r",
+									"\r",
+									"// TODO issue here\r",
+									"pm.test(\"Create Purchase Request - returned supplierContact ok\", function () {\r",
+									"    console.log('supplierContact sent : ',JSON.parse(pm.collectionVariables.get('supplierContactSerialized')))\r",
+									"    console.log('supplierContact returned : ', jsonData.supplierContact)\r",
+									"    pm.expect(jsonData.supplierContact.id).to.eql(JSON.parse(pm.collectionVariables.get('supplierContactSerialized')).id);\r",
+									"    pm.expect(jsonData.supplierContact.firstname).to.eql(JSON.parse(pm.collectionVariables.get('supplierContactSerialized')).firstname);\r",
+									"    // TODO\r",
+									"    //pm.expect(jsonData.supplierContact.lastname).to.eql(JSON.parse(pm.collectionVariables.get('supplierContactSerialized')).lastname);\r",
+									"    pm.expect(jsonData.supplierContact.email).to.eql(JSON.parse(pm.collectionVariables.get('supplierContactSerialized')).email);\r",
+									"});\r",
+									"\r",
+									"// TODO issue here\r",
+									"pm.test(\"Create Purchase Request - returned clientContact ok\", function () {\r",
+									"    console.log('clientContact sent : ',JSON.parse(pm.collectionVariables.get('clientContactSerialized')))\r",
+									"    console.log('clientContact returned : ', jsonData.clientContact)\r",
+									"    pm.expect(jsonData.clientContact.id).to.eql(JSON.parse(pm.collectionVariables.get('clientContactSerialized')).id);\r",
+									"    pm.expect(jsonData.clientContact.firstname).to.eql(JSON.parse(pm.collectionVariables.get('clientContactSerialized')).firstname);\r",
+									"    // TODO\r",
+									"    //pm.expect(jsonData.clientContact.lastname).to.eql(JSON.parse(pm.collectionVariables.get('clientContactSerialized')).lastname);\r",
+									"    pm.expect(jsonData.clientContact.email).to.eql(JSON.parse(pm.collectionVariables.get('clientContactSerialized')).email);\r",
+									"});\r",
+									"\r",
+									"// TODO issue here\r",
+									"pm.test(\"Create Purchase Request - returned deliveryAddress ok\", function () {\r",
+									"    console.log('deliveryAddress sent : ',JSON.parse(pm.collectionVariables.get('deliveryAddressSerialized')))\r",
+									"    console.log('deliveryAddress returned : ', jsonData.deliveryAddress)\r",
+									"    pm.expect(jsonData.deliveryAddress.id).to.eql(JSON.parse(pm.collectionVariables.get('deliveryAddressSerialized')).id);\r",
+									"    // TODO\r",
+									"    //pm.expect(jsonData.deliveryAddress.defaultForSubdivision).to.eql(JSON.parse(pm.collectionVariables.get('deliveryAddressSerialized')).defaultForSubdivision);\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"supplierContact\": {{supplierContactSerialized}},\r\n    \"clientContact\": {{clientContactSerialized}},\r\n    \"analyticalCenter\": {\r\n        \"id\": 10,\r\n        \"name\": \"analytical center to be defined\",\r\n        \"defaultAnalyticalCenterForSubdivision\": true\r\n    },\r\n    \"highPriority\": true,\r\n    \"deliveryAddress\": {{deliveryAddressSerialized}},\r\n    \"supplierReference\": \"supplier ref\",\r\n    \"comment\": \"comment\",\r\n    \"channel\": \"CAPEX_INSTR\",\r\n    \"domain\": {{domainSerialized}},\r\n    \"discount\": 0.0,\r\n    \"currency\": {\r\n        \"name\": \"Euro\",\r\n        \"code\": \"EUR\",\r\n        \"symbol\": \"€\",\r\n        \"rate\": 1\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Add Item",
+			"item": [
+				{
+					"name": "Get purchase request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Get purchase request - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"let jsonData = pm.response.json();\r",
+									"pm.collectionVariables.set('purchaseRequest', jsonData);\r",
+									"\r",
+									"pm.collectionVariables.set('domainId', jsonData.domain.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests/:requestNumber",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests",
+								":requestNumber"
+							],
+							"variable": [
+								{
+									"key": "requestNumber",
+									"value": "{{purchaseRequestNumber}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Lookup families by domain",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Lookup families by domain - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"// take second family\r",
+									"pm.collectionVariables.set('familyId',jsonData[1].id)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/domains/:domainId/families/:locale",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"domains",
+								":domainId",
+								"families",
+								":locale"
+							],
+							"variable": [
+								{
+									"key": "domainId",
+									"value": "{{domainId}}"
+								},
+								{
+									"key": "locale",
+									"value": "{{locale}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Lookup subfamilies by family",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Lookup subfamilies by family - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"// take first item\r",
+									"pm.collectionVariables.set('subFamily',jsonData[0])\r",
+									"pm.collectionVariables.set(\"subFamilySerialized\", JSON.stringify(jsonData[0]));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/domains/family/:familyId/subfamilies/:locale",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"domains",
+								"family",
+								":familyId",
+								"subfamilies",
+								":locale"
+							],
+							"variable": [
+								{
+									"key": "familyId",
+									"value": "{{familyId}}"
+								},
+								{
+									"key": "locale",
+									"value": "{{locale}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Add item - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Todo check item calculations\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\r\n    {\r\n        \"locale\": \"{{locale}}\",\r\n        \"id\": null,\r\n        \"purchaseCatalogItem\": null,\r\n        \"description\": \"Additionnal description\",\r\n        \"brand\": \"Brand\",\r\n        \"model\": \"Model\",\r\n        \"quantity\": 2,\r\n        \"deliveryDate\": \"2022-12-31T23:00:00.000Z\",\r\n        \"supplierCode\": \"Supplier code\",\r\n        \"unitPrice\": 100,\r\n        \"discount\": 10,\r\n        \"vat\": null,\r\n         \"sourceItem\": {\r\n            \"id\": 167,\r\n            \"itemNumber\": 5,\r\n            \"sourceId\": 167,\r\n            \"sourceNumber\": \"sourceNumber\",\r\n            \"sourceType\": \"SUB_FAMILY\"\r\n        },\r\n        \"purchaseItemNotes\": [\r\n            {\r\n                \"id\": -1,\r\n                \"description\": \"a private note\",\r\n                \"privateNote\": true\r\n            },\r\n            {\r\n                \"id\": -1,\r\n                \"description\": \"a public note\",\r\n                \"privateNote\": true\r\n            }\r\n        ],\r\n        \"purchaseItemAdditionalCosts\": [\r\n            {\r\n                \"supplierCode\": \"suppCode\",\r\n                \"type\": \"Management\",\r\n                \"total\": 9.8,\r\n                \"discount\": 2,\r\n                \"price\": 10,\r\n                \"id\": -1\r\n            },\r\n            {\r\n                \"supplierCode\": \"suppCode\",\r\n                \"type\": \"Delivery\",\r\n                \"total\": 19.2,\r\n                \"discount\": 4,\r\n                \"price\": 20,\r\n                \"id\": -1\r\n            },\r\n            {\r\n                \"supplierCode\": \"suppCode\",\r\n                \"type\": \"Packaging\",\r\n                \"total\": 28.2,\r\n                \"discount\": 6,\r\n                \"price\": 30,\r\n                \"id\": -1\r\n            },\r\n            {\r\n                \"supplierCode\": \"suppCode\",\r\n                \"type\": \"Other\",\r\n                \"total\": 36.8,\r\n                \"discount\": 8,\r\n                \"price\": 40,\r\n                \"id\": -1\r\n            }\r\n        ]\r\n    },\r\n       {\r\n        \"unitPrice\": 0.00,\r\n        \"quantity\": 2,\r\n        \"discount\": 5.125,\r\n        \"locale\": \"fr_FR\",\r\n        \"brand\": \"laborum velit\",\r\n        \"model\": \"cillum in\",\r\n        \"description\": \"tempor\",\r\n        \"sourceItem\": {\r\n            \"id\": 1,\r\n            \"sourceNumber\": 1,\r\n            \"sourceType\": \"SUB_FAMILY\"\r\n        },\r\n        \"purchaseCatalogItem\": {\r\n            \"id\": 215,\r\n            \"name\": \"Shipping\",\r\n            \"purchaseCatalogFamily\": {\r\n                \"private\": null,\r\n                \"id\": 43,\r\n                \"name\": \"Additional Costs\",\r\n                \"locale\": \"en_US\"\r\n            }\r\n        },\r\n        \"purchaseItemAdditionalCosts\": [\r\n            {\r\n                \"price\": 0.00,\r\n                \"discount\": 4.675,\r\n                \"type\": \"Packaging\",\r\n                \"vat\": 0.0,\r\n                \"supplierCode\": \"suppCode\"\r\n            },\r\n            {\r\n                \"price\": 0.00,\r\n                \"discount\": 0.00,\r\n                \"type\": \"Delivery\",\r\n                \"vat\": 0.0,\r\n                \"supplierCode\": \"suppCode\"\r\n            }\r\n        ]\r\n    }\r\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests/:purchaseRequestNumber/items",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests",
+								":purchaseRequestNumber",
+								"items"
+							],
+							"variable": [
+								{
+									"key": "purchaseRequestNumber",
+									"value": "{{purchaseRequestNumber}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get purchase request (check calculations)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Get purchase request (check calculations) - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"let jsonData = pm.response.json();\r",
+									"\r",
+									"// check calulations for purchase request item\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check 2 items is returned\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems.length).to.eql(2);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check item 1 unitPrice\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].unitPrice).to.eql(100.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check item 1 discount\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].discount).to.eql(10.00);\r",
+									"});\r",
+									"\r",
+									"// check calulations for purchaseItemAdditionalCosts 1\r",
+									"\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 1 of item 1  price\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[0].price).to.eql(10.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 1 of item 1  discount\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[0].discount).to.eql(2.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 1 of item 1  total\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[0].total).to.eql(9.80);\r",
+									"});\r",
+									"\r",
+									"// check calulations for purchaseItemAdditionalCosts 2\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 2 of item 1  price\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[1].price).to.eql(20.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 2 of item 1  discount\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[1].discount).to.eql(4.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 2 of item 1  total\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[1].total).to.eql(19.20);\r",
+									"});\r",
+									"\r",
+									"// check calulations for purchaseItemAdditionalCosts 3\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 3 of item 1  price\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[2].price).to.eql(30.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 3 of item 1  discount\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[2].discount).to.eql(6.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 3 of item 1  total\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[2].total).to.eql(28.20);\r",
+									"});\r",
+									"\r",
+									"// check calulations for purchaseItemAdditionalCosts 4\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 4 of item 1  price\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[3].price).to.eql(40.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 4 of item 1  discount\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[3].discount).to.eql(8.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchaseItemAdditionalCosts 4 of item 1  total\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].purchaseItemAdditionalCosts[3].total).to.eql(36.80);\r",
+									"});\r",
+									"\r",
+									"// check totals calulations for item 1 \r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check item 1 total\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].total).to.eql(274);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check item 1 totalExcludingVat\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].totalExcludingVat).to.eql(274.00);\r",
+									"});\r",
+									"\r",
+									"// check totals calulations for purchase request \r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchase request discount\", function () {\r",
+									"    pm.expect(jsonData.discount).to.eql(0.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchase request totalExcludingVat\", function () {\r",
+									"    pm.expect(jsonData.totalExcludingVat).to.eql(274.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchase request vat\", function () {\r",
+									"    pm.expect(jsonData.vat).to.eql(null);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get purchase request (check calculations) - check purchase request total\", function () {\r",
+									"    pm.expect(jsonData.total).to.eql(274.00);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get nominal code of first item - check nominal code is PC005\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[0].nominalCode.code).to.eql(\"PC005\");\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Get nominal code of second item - check nominal code is PC005\", function () {\r",
+									"    pm.expect(jsonData.purchaseItems[1].nominalCode.code).to.eql(\"PC005\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests/:requestNumber",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests",
+								":requestNumber"
+							],
+							"variable": [
+								{
+									"key": "requestNumber",
+									"value": "{{purchaseRequestNumber}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Send to approve",
+			"item": [
+				{
+					"name": "Send to approve",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Send to approve - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"comment\": null,\r\n    \"action\": {\r\n        \"name\": \"SEND_TO_APPROVE\",\r\n        \"permissions\": [\r\n            \"PURCHASE_REQUEST_ACTION_SEND_APPROVED\"\r\n        ]\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests/:purchase-request/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests",
+								":purchase-request",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "purchase-request",
+									"value": "{{purchaseRequestNumber}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get purchase request - test status change : to approve",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Get purchase request - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"let jsonData = pm.response.json();\r",
+									"pm.collectionVariables.set('purchaseRequest', jsonData);\r",
+									"\r",
+									"let count = pm.collectionVariables.get('loop-var');\r",
+									"\r",
+									"if (jsonData.purchaseRequestStatus !== \"TO_APPROVE\") {\r",
+									"\r",
+									"    pm.collectionVariables.set('loop-var', --count);\r",
+									"\r",
+									"    if (pm.collectionVariables.get('loop-var') > 0) {\r",
+									"        setTimeout(function () {\r",
+									"            postman.setNextRequest(\"Get purchase request - test status change : to approve\");\r",
+									"        }, [2000]);\r",
+									"    }\r",
+									"    else {\r",
+									"        postman.setNextRequest(null);\r",
+									"        pm.expect.fail('Status is not correct after multiple retires !');\r",
+									"    }\r",
+									"\r",
+									"}\r",
+									"else {\r",
+									"    setTimeout(function () {\r",
+									"        postman.setNextRequest(\"Get approvers list\")\r",
+									"    }, [2000]);\r",
+									"\r",
+									"}\r",
+									"\r",
+									"\r",
+									"\r",
+									"\r",
+									"\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests/:requestNumber",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests",
+								":requestNumber"
+							],
+							"variable": [
+								{
+									"key": "requestNumber",
+									"value": "{{purchaseRequestNumber}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Approve",
+			"item": [
+				{
+					"name": "Get approvers list",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Get approvers list - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"let jsonData = pm.response.json();\r",
+									"pm.test(\"Get approvers list - List is not empty\", function () {\r",
+									"    pm.expect(jsonData.lenght).to.not.eql(0)\r",
+									"});\r",
+									"\r",
+									"// save approver id\r",
+									"pm.collectionVariables.set('approverUserId',jsonData[0].username);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests/approvers/:purchase-request",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests",
+								"approvers",
+								":purchase-request"
+							],
+							"variable": [
+								{
+									"key": "purchase-request",
+									"value": "{{purchaseRequestNumber}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Approve",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Send to approve - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// build jwt token for the approver\r",
+									"\r",
+									"var approverUserId = pm.collectionVariables.get('approverUserId');\r",
+									"\r",
+									"// import the jsrsasign library\r",
+									"var navigator = {}; //fake a navigator object for the lib\r",
+									"var window = {}; //fake a window object for the lib\r",
+									"var jsrsasignLibrary = pm.collectionVariables.get('jsrsasignLibrary');\r",
+									"eval(jsrsasignLibrary);\r",
+									"\r",
+									"// define our jwt header & claims\r",
+									"let header = {\r",
+									"  \"typ\": \"JWT\",\r",
+									"  \"alg\": \"HS384\"\r",
+									"}\r",
+									"let payload = {\r",
+									"  \"iat\": 1666283947,\r",
+									"  \"sub\": \"jwt token\",\r",
+									"  \"iss\": \"trescal\",\r",
+									"  \"exp\": 1766370347,\r",
+									"  \"userId\": 38526,\r",
+									"  \"cid\": 6685,\r",
+									"  \"userName\": approverUserId,\r",
+									"  \"firstName\": approverUserId,\r",
+									"  \"lastName\": approverUserId,\r",
+									"  \"subdivisionId\": 6951,\r",
+									"  \"subdivisionName\": \"Subdivision name\",\r",
+									"  \"locale\": \"en_US\"\r",
+									"}\r",
+									"\r",
+									"// sign and create JWT\r",
+									"let secret = pm.environment.get('jwtSecret');\r",
+									"let sJWT = KJUR.jws.JWS.sign(\"HS384\", header, payload, {\"b64u\": secret});\r",
+									"\r",
+									"// store the \r",
+									"pm.collectionVariables.set('approverJwtToken',sJWT)\r",
+									"console.log(sJWT)\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{approverJwtToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"comment\": null,\r\n    \"action\": {\r\n        \"name\": \"APPROVE\",\r\n        \"permissions\": [\r\n            \"PURCHASE_REQUEST_ACTION_APPROVE\"\r\n        ]\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests/:purchase-request/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests",
+								":purchase-request",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "purchase-request",
+									"value": "{{purchaseRequestNumber}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get purchase request - test status change : to allocate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Get purchase request - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"let jsonData = pm.response.json();\r",
+									"pm.collectionVariables.set('purchaseRequest', jsonData);\r",
+									"let count = pm.collectionVariables.get('loop-var');\r",
+									"\r",
+									"if (jsonData.purchaseRequestStatus !== \"TO_ALLOCATE\") {\r",
+									"pm.collectionVariables.set('loop-var',--count);\r",
+									"\r",
+									"if(pm.collectionVariables.get('loop-var')>0){\r",
+									"setTimeout(function(){\r",
+									"postman.setNextRequest(\"Get purchase request - test status change : to allocate\");\r",
+									"}, [2000]);    \r",
+									"}\r",
+									" else{\r",
+									"        postman.setNextRequest(null); \r",
+									" }\r",
+									"} \r",
+									"else {\r",
+									"setTimeout(function(){\r",
+									" postman.setNextRequest(\"Allocate\")}, [2000])\r",
+									"}\r",
+									"\r",
+									"\r",
+									"\r",
+									"\r",
+									"\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/purchaserequests/:requestNumber",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"purchaserequests",
+								":requestNumber"
+							],
+							"variable": [
+								{
+									"key": "requestNumber",
+									"value": "{{purchaseRequestNumber}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "To validate",
+			"item": [
+				{
+					"name": "Allocate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Send to approve - Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"ayboutahar\",\r\n    \"requestNumbers\": [\r\n           \"{{purchaseRequestNumber}}\"\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/allocations/purchaserequests",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"purchaserequests"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwtToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "supplierCompanyid",
+			"value": ""
+		},
+		{
+			"key": "supplierCompanyId",
+			"value": ""
+		},
+		{
+			"key": "supplierSubdivisionId",
+			"value": ""
+		},
+		{
+			"key": "supplierContactId",
+			"value": ""
+		},
+		{
+			"key": "domaintId",
+			"value": ""
+		},
+		{
+			"key": "clientCompanyId",
+			"value": ""
+		},
+		{
+			"key": "clientSubdivisionId",
+			"value": ""
+		},
+		{
+			"key": "clientContactId",
+			"value": ""
+		},
+		{
+			"key": "domain",
+			"value": ""
+		},
+		{
+			"key": "supplierContact",
+			"value": ""
+		},
+		{
+			"key": "supplierCompany",
+			"value": ""
+		},
+		{
+			"key": "supplierSubdivision",
+			"value": ""
+		},
+		{
+			"key": "supplierContactSerialized",
+			"value": ""
+		},
+		{
+			"key": "domainSerialized",
+			"value": ""
+		},
+		{
+			"key": "clientCompany",
+			"value": ""
+		},
+		{
+			"key": "clientSubdivision",
+			"value": ""
+		},
+		{
+			"key": "clientContactSerialized",
+			"value": ""
+		},
+		{
+			"key": "deliveryAddressSerialized",
+			"value": ""
+		},
+		{
+			"key": "bearer",
+			"value": ""
+		},
+		{
+			"key": "jwtToken",
+			"value": ""
+		},
+		{
+			"key": "locale",
+			"value": "en_US",
+			"type": "default"
+		},
+		{
+			"key": "current-subdivision-id",
+			"value": "6969",
+			"type": "default"
+		},
+		{
+			"key": "loop-var",
+			"value": "4",
+			"type": "string"
+		},
+		{
+			"key": "purchaseRequestNumber",
+			"value": ""
+		},
+		{
+			"key": "purchaseRequest",
+			"value": ""
+		},
+		{
+			"key": "domainId",
+			"value": ""
+		},
+		{
+			"key": "familyId",
+			"value": ""
+		},
+		{
+			"key": "subFamily",
+			"value": ""
+		},
+		{
+			"key": "subFamilySerialized",
+			"value": ""
+		},
+		{
+			"key": "jsrsasignLibrary",
+			"value": ""
+		},
+		{
+			"key": "approverUserId",
+			"value": ""
+		},
+		{
+			"key": "approverJwtToken",
+			"value": ""
+		}
+	]
+}
